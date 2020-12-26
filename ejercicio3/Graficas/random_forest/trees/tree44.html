@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+
+    <title>Eureka Trees</title>
+
+    <style>
+        .node circle {
+            fill: #fff;
+            stroke: steelblue;
+            stroke-width: 3px;
+        }
+
+        .node text {
+            font: 12px sans-serif;
+        }
+
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 2px;
+        }
+
+        rect {
+            stroke-width: 3px;
+            stroke: #8c8c8c;
+        }
+
+        .decision-mark {
+            font-weight: bold;
+        }
+
+    </style>
+
+</head>
+
+<body>
+<a href="../home.html">Home</a>
+<br>
+<br>
+
+<!-- load the d3.js library -->
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
+<script>
+    var data = [{"name": "feature_122 <= 80.36999499999999", "children": [{"name": "feature_15 <= 48.68999650000001", "type": "left", "is_prediction": false, "children": [{"name": "feature_71 <= 34.7399975", "type": "left", "is_prediction": false, "children": [{"name": "feature_109 <= 52.289997", "type": "left", "is_prediction": false, "children": [{"name": 39.7724456153846, "type": "left", "is_prediction": true, "children": []}, {"name": 39.3079702097902, "type": "right", "is_prediction": true, "children": []}]}, {"name": "feature_17 <= 27.7199985", "type": "right", "is_prediction": false, "children": [{"name": "feature_109 <= 49.499998000000005", "type": "left", "is_prediction": false, "children": [{"name": 38.3362222727273, "type": "left", "is_prediction": true, "children": []}, {"name": 37.85689355384614, "type": "right", "is_prediction": true, "children": []}]}, {"name": "feature_0 <= 33.5699995", "type": "right", "is_prediction": false, "children": [{"name": 37.1794390559441, "type": "left", "is_prediction": true, "children": []}, {"name": 37.4060124475524, "type": "right", "is_prediction": true, "children": []}]}]}]}, {"name": 45.1434945804196, "type": "right", "is_prediction": true, "children": []}]}, {"name": "feature_97 <= 83.6099965", "type": "right", "is_prediction": false, "children": [{"name": 55.52307444055939, "type": "left", "is_prediction": true, "children": []}, {"name": "feature_113 <= 91.529995", "type": "right", "is_prediction": false, "children": [{"name": "feature_81 <= 70.6499975", "type": "left", "is_prediction": false, "children": [{"name": 67.9229339090909, "type": "left", "is_prediction": true, "children": []}, {"name": 68.22209496503501, "type": "right", "is_prediction": true, "children": []}]}, {"name": "feature_2 <= 52.649998", "type": "right", "is_prediction": false, "children": [{"name": "feature_127 <= 83.9699975", "type": "left", "is_prediction": false, "children": [{"name": 71.5053115734265, "type": "left", "is_prediction": true, "children": []}, {"name": 71.64503184265736, "type": "right", "is_prediction": true, "children": []}]}, {"name": "feature_0 <= 55.3499985", "type": "right", "is_prediction": false, "children": [{"name": 72.2542627412587, "type": "left", "is_prediction": true, "children": []}, {"name": 72.2576192657343, "type": "right", "is_prediction": true, "children": []}]}]}]}]}], "type": "root"}];
+
+    var dataMap = data.reduce(function (map, node) {
+        map[node.name] = node;
+        return map;
+    }, {});
+
+    var treeData = [];
+    data.forEach(function (node) {
+        // add to parent
+        var parent = dataMap[node.parent];
+        if (parent) {
+            // create child array if it doesn't exist
+            (parent.children || (parent.children = []))
+            // add node to child array
+                .push(node);
+        } else {
+            // parent is null or missing
+            treeData.push(node);
+        }
+    });
+    // ************** Generate the tree diagram	 *****************
+    var margin = {top: 100, right: 40, bottom: 20, left: 40},
+        width = 3750 -margin.right - margin.left,
+        height = 600;
+
+    var i = 0;
+    var tree = d3.layout.tree()
+        .size([height, width]);
+    var diagonal = d3.svg.diagonal()
+        .projection(function (d) {
+            return [d.x * 4, d.y];
+        });
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.right + margin.left)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    root = treeData[0];
+
+    update(root);
+
+    function update(source) {
+        // Compute the new tree layout.
+        var nodes = tree.nodes(source).reverse(),
+            links = tree.links(nodes);
+        // Normalize for fixed-depth.
+        nodes.forEach(function (d) {
+            d.y = d.depth * 100;
+        });
+        // Declare the nodes
+        var node = svg.selectAll("g.node")
+            .data(nodes, function (d) {
+                return d.id || (d.id = ++i);
+            });
+        // Enter the nodes.
+        var nodeEnter = node.enter().append("g")
+            .attr("class", function (d) {
+                var result = "node";
+                if (d.is_prediction) {
+                    result = result + " prediction";
+                } else {
+                    result = result + " decision";
+                }
+                result = result + " " + d.type;
+                return result;
+            })
+            .attr("transform", function (d) {
+                return "translate(" + d.x * 4 + "," + d.y + ")";
+            });
+
+        nodeEnter.append("text")
+            .attr("y", function (d) {
+                return d.children || d._children ? -30 : 25;
+            })
+            .attr("dy", ".35em")
+            .attr("text-anchor", "middle")
+            .text(function (d) {
+                if (typeof d.name === 'number') {
+                    return d.name;
+                }
+                else {
+                    var splitArray = d.name.split(' ');
+                    return splitArray[splitArray.length - 1];
+
+                }
+
+            })
+            .style("fill-opacity", 1);
+
+        var predictions = nodeEnter.filter(function (d) {
+            return (d.is_prediction === true);
+        });
+
+        predictions.append("circle")
+            .attr("cx", "0px")
+            .attr("cy", "0px")
+            .attr("r", "12px");
+
+
+        var decisions = nodeEnter.filter(function (d) {
+            return (d.is_prediction !== true);
+        });
+
+        decisions.append("rect")
+            .attr("x", -15)
+            .attr("y", -15)
+            .attr("transform", "rotate(45)")
+            .attr("width", "25")
+            .attr("height", "25")
+            .style("fill", "#fff");
+
+        decisions
+            .append("text")
+            .text("Yes")
+            .attr("text-anchor", "middle")
+            .attr("x", -30)
+            .attr("y", 30);
+
+        decisions
+            .append("text")
+            .text("No")
+            .attr("text-anchor", "middle")
+            .attr("x", 30)
+            .attr("y", 30);
+
+        decisions
+            .append("text")
+            .text("?")
+            .attr("class", "decision-mark")
+            .attr("text-anchor", "middle")
+            .attr("x", 0)
+            .attr("y", 0);
+
+        decisions.append("text")
+            .attr("y", function (d) {
+                return d.children || d._children ? -60 : 60;
+            })
+            .attr("dy", ".35em")
+            .attr("text-anchor", "middle")
+            .text(function (d) {
+                return d.name.split(' ')[0];
+            })
+            .style("fill-opacity", 1);
+
+        decisions.append("text")
+            .attr("y", function (d) {
+                return d.children || d._children ? -44 : 44;
+            })
+            .attr("dy", ".35em")
+            .attr("text-anchor", "middle")
+            .text("<=")
+            .style("fill-opacity", 1);
+
+
+        // Declare the links
+        var link = svg.selectAll("path.link")
+            .data(links, function (d) {
+                return d.target.id;
+            });
+        // Enter the links.
+        link.enter().insert("path", "g")
+            .attr("class", "link")
+            .attr("d", diagonal);
+    }
+</script>
+
+</body>
+</html>

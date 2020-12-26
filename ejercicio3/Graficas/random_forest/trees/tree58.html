@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+
+    <title>Eureka Trees</title>
+
+    <style>
+        .node circle {
+            fill: #fff;
+            stroke: steelblue;
+            stroke-width: 3px;
+        }
+
+        .node text {
+            font: 12px sans-serif;
+        }
+
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 2px;
+        }
+
+        rect {
+            stroke-width: 3px;
+            stroke: #8c8c8c;
+        }
+
+        .decision-mark {
+            font-weight: bold;
+        }
+
+    </style>
+
+</head>
+
+<body>
+<a href="../home.html">Home</a>
+<br>
+<br>
+
+<!-- load the d3.js library -->
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
+<script>
+    var data = [{"name": "feature_14 <= 29.249999", "children": [{"name": "feature_96 <= 37.16999800000001", "type": "left", "is_prediction": false, "children": [{"name": "feature_0 <= 32.039998", "type": "left", "is_prediction": false, "children": [{"name": 39.7724456153846, "type": "left", "is_prediction": true, "children": []}, {"name": 38.76419404195799, "type": "right", "is_prediction": true, "children": []}]}, {"name": "feature_97 <= 41.129997", "type": "right", "is_prediction": false, "children": [{"name": "feature_102 <= 48.059997499999994", "type": "left", "is_prediction": false, "children": [{"name": 38.3362222727273, "type": "left", "is_prediction": true, "children": []}, {"name": "feature_103 <= 50.129999", "type": "right", "is_prediction": false, "children": [{"name": 37.8289495104895, "type": "left", "is_prediction": true, "children": []}, {"name": 37.9686697272727, "type": "right", "is_prediction": true, "children": []}]}]}, {"name": "feature_131 <= 44.8199975", "type": "right", "is_prediction": false, "children": [{"name": "feature_138 <= 37.8899995", "type": "left", "is_prediction": false, "children": [{"name": 37.1794390559441, "type": "left", "is_prediction": true, "children": []}, {"name": 37.4060124475524, "type": "right", "is_prediction": true, "children": []}]}, {"name": 37.918320090909106, "type": "right", "is_prediction": true, "children": []}]}]}]}, {"name": "feature_9 <= 50.8499985", "type": "right", "is_prediction": false, "children": [{"name": "feature_133 <= 68.2199935", "type": "left", "is_prediction": false, "children": [{"name": "feature_54 <= 74.9699975", "type": "left", "is_prediction": false, "children": [{"name": "feature_0 <= 44.0999985", "type": "left", "is_prediction": false, "children": [{"name": 67.2293675734266, "type": "left", "is_prediction": true, "children": []}, {"name": 66.8542630909091, "type": "right", "is_prediction": true, "children": []}]}, {"name": "feature_0 <= 36.629999", "type": "right", "is_prediction": false, "children": [{"name": 68.222094965035, "type": "left", "is_prediction": true, "children": []}, {"name": 67.9229339090909, "type": "right", "is_prediction": true, "children": []}]}]}, {"name": "feature_0 <= 53.63999750000001", "type": "right", "is_prediction": false, "children": [{"name": "feature_121 <= 89.369999", "type": "left", "is_prediction": false, "children": [{"name": 71.6509058601399, "type": "left", "is_prediction": true, "children": []}, {"name": 71.63915782517479, "type": "right", "is_prediction": true, "children": []}]}, {"name": 72.25761926573432, "type": "right", "is_prediction": true, "children": []}]}]}, {"name": "feature_49 <= 84.05999750000001", "type": "right", "is_prediction": false, "children": [{"name": 55.5230744405594, "type": "left", "is_prediction": true, "children": []}, {"name": 45.1434945804196, "type": "right", "is_prediction": true, "children": []}]}]}], "type": "root"}];
+
+    var dataMap = data.reduce(function (map, node) {
+        map[node.name] = node;
+        return map;
+    }, {});
+
+    var treeData = [];
+    data.forEach(function (node) {
+        // add to parent
+        var parent = dataMap[node.parent];
+        if (parent) {
+            // create child array if it doesn't exist
+            (parent.children || (parent.children = []))
+            // add node to child array
+                .push(node);
+        } else {
+            // parent is null or missing
+            treeData.push(node);
+        }
+    });
+    // ************** Generate the tree diagram	 *****************
+    var margin = {top: 100, right: 40, bottom: 20, left: 40},
+        width = 3750 -margin.right - margin.left,
+        height = 600;
+
+    var i = 0;
+    var tree = d3.layout.tree()
+        .size([height, width]);
+    var diagonal = d3.svg.diagonal()
+        .projection(function (d) {
+            return [d.x * 4, d.y];
+        });
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.right + margin.left)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    root = treeData[0];
+
+    update(root);
+
+    function update(source) {
+        // Compute the new tree layout.
+        var nodes = tree.nodes(source).reverse(),
+            links = tree.links(nodes);
+        // Normalize for fixed-depth.
+        nodes.forEach(function (d) {
+            d.y = d.depth * 100;
+        });
+        // Declare the nodes
+        var node = svg.selectAll("g.node")
+            .data(nodes, function (d) {
+                return d.id || (d.id = ++i);
+            });
+        // Enter the nodes.
+        var nodeEnter = node.enter().append("g")
+            .attr("class", function (d) {
+                var result = "node";
+                if (d.is_prediction) {
+                    result = result + " prediction";
+                } else {
+                    result = result + " decision";
+                }
+                result = result + " " + d.type;
+                return result;
+            })
+            .attr("transform", function (d) {
+                return "translate(" + d.x * 4 + "," + d.y + ")";
+            });
+
+        nodeEnter.append("text")
+            .attr("y", function (d) {
+                return d.children || d._children ? -30 : 25;
+            })
+            .attr("dy", ".35em")
+            .attr("text-anchor", "middle")
+            .text(function (d) {
+                if (typeof d.name === 'number') {
+                    return d.name;
+                }
+                else {
+                    var splitArray = d.name.split(' ');
+                    return splitArray[splitArray.length - 1];
+
+                }
+
+            })
+            .style("fill-opacity", 1);
+
+        var predictions = nodeEnter.filter(function (d) {
+            return (d.is_prediction === true);
+        });
+
+        predictions.append("circle")
+            .attr("cx", "0px")
+            .attr("cy", "0px")
+            .attr("r", "12px");
+
+
+        var decisions = nodeEnter.filter(function (d) {
+            return (d.is_prediction !== true);
+        });
+
+        decisions.append("rect")
+            .attr("x", -15)
+            .attr("y", -15)
+            .attr("transform", "rotate(45)")
+            .attr("width", "25")
+            .attr("height", "25")
+            .style("fill", "#fff");
+
+        decisions
+            .append("text")
+            .text("Yes")
+            .attr("text-anchor", "middle")
+            .attr("x", -30)
+            .attr("y", 30);
+
+        decisions
+            .append("text")
+            .text("No")
+            .attr("text-anchor", "middle")
+            .attr("x", 30)
+            .attr("y", 30);
+
+        decisions
+            .append("text")
+            .text("?")
+            .attr("class", "decision-mark")
+            .attr("text-anchor", "middle")
+            .attr("x", 0)
+            .attr("y", 0);
+
+        decisions.append("text")
+            .attr("y", function (d) {
+                return d.children || d._children ? -60 : 60;
+            })
+            .attr("dy", ".35em")
+            .attr("text-anchor", "middle")
+            .text(function (d) {
+                return d.name.split(' ')[0];
+            })
+            .style("fill-opacity", 1);
+
+        decisions.append("text")
+            .attr("y", function (d) {
+                return d.children || d._children ? -44 : 44;
+            })
+            .attr("dy", ".35em")
+            .attr("text-anchor", "middle")
+            .text("<=")
+            .style("fill-opacity", 1);
+
+
+        // Declare the links
+        var link = svg.selectAll("path.link")
+            .data(links, function (d) {
+                return d.target.id;
+            });
+        // Enter the links.
+        link.enter().insert("path", "g")
+            .attr("class", "link")
+            .attr("d", diagonal);
+    }
+</script>
+
+</body>
+</html>
