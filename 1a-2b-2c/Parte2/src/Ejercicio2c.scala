@@ -52,7 +52,7 @@ object Ejercicio2c {
      fs.delete(new Path("./output_tmp"), true)
 
      
-     // Evaluate clustering by computing Within Set Sum of Squared Errors
+     // Evaluamos los clusters y calculamos el error cuadratico 
       val WSSSE = clusters.computeCost(dataSet)
       println(s"Within Set Sum of Squared Errors = $WSSSE")
       
@@ -63,24 +63,22 @@ object Ejercicio2c {
       val rddMediaElementos = rddMedidas.map(_.reduce(_+_)/numeroMedidas).zipWithIndex.map(x => (x._2, x._1))
       
       val rddSFIMedias = sensorFechaLabel.zipWithIndex.map(x => (x._2, x._1)).join(rddMediaElementos).sortBy(_._1).map(_._2).map(x => x._1 + "," + x._2.toString)
-
-
       val rddSFIMediasHeader = sc.parallelize(List("Sensor, Fecha, Label, Media"))
       
-      //val SFIMedias = .join(rddSFIMedias).sortBy(_._1).map(_._2).map(x => x._1 + "," + x._2.toString)
-
       val dataUnionSFIM = rddSFIMediasHeader.union(rddSFIMedias)
       dataUnionSFIM.repartition(1).saveAsTextFile("./output_tmp")
 
       fs.rename(new Path("./output_tmp/part-00000"), new Path("../../ficheros/2c-clusters-medias.csv"))
       fs.delete(new Path("./output_tmp"), true)
       
-      // Puntos medios de los centroides
+      // Guardamos el puntos medios de los centroides
       val mediaCentroides = clusters.clusterCenters.map(x => x.toArray).map(_.reduce(_+_)/numeroMedidas).map(_.toString)
       sc.parallelize(mediaCentroides).repartition(1).saveAsTextFile("./output_tmp")
       mediaCentroides.foreach(println)
       fs.rename(new Path("./output_tmp/part-00000"), new Path("../../ficheros/2c-clusters-centros.csv"))
       fs.delete(new Path("./output_tmp"), true)
+      
+      println("Proceso finalizado")
       
      }
 }

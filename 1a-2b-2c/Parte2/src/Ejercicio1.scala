@@ -17,7 +17,6 @@ object Ejercicio1 {
       rddFromFile.count()
       
       val rddCompleto = rddFromFile.filter(_.contains("DG1000420")).map(_.split(","))
-      //val rddCompleto = rddFromFile.filter(_.contains("DG1000420")).map(_.split(",")).map(_.drop(1))
       // Eliminamos el campo del nombre del sensor
       val rddFechaMedidas = rddCompleto.map(_.drop(1))
       // Eliminamos tanto el campo del nombre del sensor como del tiempo
@@ -34,26 +33,13 @@ object Ejercicio1 {
       // DataSet final, con las medidas y la media, quitamos el primer elemento que es el indice y exportamos
       val finalDataset = rddCompletoDictionary.join(rddMediaElementos).sortBy(_._1).map(_._2)
       finalDataset.map(x => (x._1 + ", " + x._2)).saveAsTextFile("./output_tmp")
-      //val read_rdd = sc.textFile("./output/part-00000")
-      //read_rdd.collect()
-      //new File("./output/part-00000").renameTo(new File("./files/prediccion.txt"))
-
-      //new File("./output/part-00000").renameTo(new File("./files/prediccion.txt"))
       val fs = FileSystem.get(sc.hadoopConfiguration)
-      //fs.rename(new Path("./output_tmp/part-00000"), new Path("./output/prediccion.csv"))
       fs.rename(new Path("./output_tmp/part-00000"), new Path("../../ficheros/prediccion.csv"))
 
-    // Remove output directory
+      // Remove output directory
       fs.delete(new Path("./output_tmp"), true)
       
-      
-      println(numeroMedidas)
-      //rddMediaElementos.foreach(x => println(x.mkString(", ")))
-      rddMediaElementos.foreach(println)
-      rddCompletoDictionary.foreach(println)
-      finalDataset.foreach(println)
-      //rddMedidas.foreach(arr => println((arr._1, arr._2)))
-      //println(rddMediaElementos)
+      println("Proceso finalizado con exito")
    }
 
 

@@ -40,7 +40,7 @@ object Ejercicio2b {
       val predictionNNETRaw = sc.textFile("../../ficheros/2a-prediction_test_set.csv").cache()
       val predictionNNETRawHeader = predictionNNETRaw.first()
       
-     //Transformacion de los datos en LabeledPoing para usar el modelo
+     // Transformacion de los datos en LabeledPoing para usar el modelo
      val trainingSet = dataTraining_no_index_split.map(row => new LabeledPoint(row.last.toDouble, Vectors.dense(row.take(row.length - 1)
          .map(string => string.toDouble))))
      val testSet = dataTest_no_index_split.map(row => new LabeledPoint(row.last.toDouble, Vectors.dense(row.take(row.length - 1)
@@ -63,12 +63,11 @@ object Ejercicio2b {
      pw.close
      
      
-     
+     // Metricas del modelo a partir del set de test
      val labelsAndPredictions  = testSet.map { point =>
        val prediction = model.predict(point.features)
         (point.label, prediction)
       }
-     // Metricas del modelo a partir del set de test
       // Instanciacion
       val metrics = new RegressionMetrics(labelsAndPredictions)
       // Mean Absolute Error (Error absoluto medio)
@@ -84,7 +83,6 @@ object Ejercicio2b {
       val prediction = model.predict(testFeaturesSet).zipWithIndex.map(x => (x._2 + "," +x._1))
       prediction.foreach(println)
       prediction.saveAsTextFile("./output_tmp")
-      //val prediction = labelsAndPredictions.map(_._2)
       fs.rename(new Path("./output_tmp/part-00000"), new Path("../../ficheros/2b-test_prediction.csv"))
       fs.delete(new Path("./output_tmp"), true)
       
@@ -93,9 +91,11 @@ object Ejercicio2b {
       val predictionRandomTree = prediction_index.map(_._2).zipWithIndex.map(x => (x._2, x._1))
       val predictionNNET = predictionNNETRaw.filter(_!= predictionNNETRawHeader)
       .map(_.split(",").drop(1)).zipWithIndex.map(x => (x._2, x._1.mkString(", ")))
+      
       // Unimos a pares las comparaciones con los dos modelos
       val predictioncomparation = predictionRandomTree.join(predictionNNET).sortBy(_._1).map(_._2)
       val predictioncomparationString = predictioncomparation.map(x => (x._1 + ", " + x._2))
+      
       // Creamos la cabecera para añadir al csv de la comparacion
       val rddheadercomparation = sc.parallelize(List("RandomTree, NNET"))
       //Unimos la cabecera y escribimos el fichero
@@ -118,6 +118,8 @@ object Ejercicio2b {
       prediction_training.saveAsTextFile("./output_tmp")
       fs.rename(new Path("./output_tmp/part-00000"), new Path("../../ficheros/2b-training_prediction.csv"))
       fs.delete(new Path("./output_tmp"), true)
+      
+      println("Proceso finalizado")
 
      
      }

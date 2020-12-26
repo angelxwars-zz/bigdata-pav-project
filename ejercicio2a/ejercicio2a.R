@@ -1,10 +1,10 @@
 library(ggplot2)
 library(caret)
 library(mlbench)
-#load the data
+# Carga de datos
 measures_file <- read.csv("../ficheros/prediccion.csv",header=FALSE, sep=",")
 
-#Creamos los set de datos para el entrenamiento y el test
+# Creamos los set de datos para el entrenamiento y el test
 training_index <- createDataPartition(y = measures_file$V146, p = .70, list = FALSE)
 training_set <- measures_file[training_index,2:146]
 test_set<- measures_file[-training_index,2:146]
@@ -20,12 +20,6 @@ set.seed(2020)
 # Definicion de las variables del tamaño de las capas ocultas y el decay
 tune_grid_neural <- expand.grid(size = seq(from = 1, to = 6, by = 1),
                                            decay = seq(from = 0.1, to = 0.5, by = 0.1))
-
-
-# part b: set some other consrains to be imposed on network (to keep computation manageable)
-# see: p. 361 of Kuhn & Johnson (2013, 
-#max_size_neaural <- max(tune_grid_neural$size)
-#max_weights_neural <- max_size_neaural*(nrow(training_set) + 1) + max_size_neaural + 1
 
 
 # Definicion de k-fold Cross-Validation
